@@ -20,6 +20,23 @@
 #include <string>
 #include <stdlib.h>
 
+struct Player{
+    std::string name;
+    int score;
+    std::string date;
+    std::string time;
+};
+
+int cmp(const void* a, const void* b){ // Score -> Name_Acsii -> Date -> Time
+    const Player* player_a = (const Player*)a;
+    const Player* player_b = (const Player*)b;
+    if(player_a->score != player_b->score) return player_a->score > player_b->score ? -1:1;
+    if(player_a->name != player_b->name)  return player_a->name < player_b->name ? -1:1;
+    if(player_a->date != player_b->date) return player_a->date < player_b->date ? -1:1;
+    if(player_a->time != player_b->time) return player_a->time < player_b->time ? -1:1;
+    return 0;
+}
+
 void ScoreBoardScene::Initialize() {
     std::cout << "hello!\n";
     int w = Engine::GameEngine::GetInstance().GetScreenSize().x;
@@ -31,11 +48,21 @@ void ScoreBoardScene::Initialize() {
     page_label.clear();
     std::ifstream UserData("../SaveGame.txt");
     std::string user;
+    std::string name, date, time;
+    int score;
+    std::vector<Player> players;
+    while (UserData >> name >> score >> date >> time) {
+        players.push_back({name, score, date + " " + time});
+    }
+    qsort(players.data(), players.size(), sizeof(Player), cmp);
+
+
     int lineNum = 0;
     int starthigh = halfH / 3;
     int linehigh = 60;
-    while(std::getline(UserData, user)){
+    for(int i = 0; i < players.size(); i++){
         int y = starthigh + lineNum * linehigh;
+        std::string user = players[i].name + " " + std::to_string(players[i].score) + " " + players[i].date + " " + players[i].time;
         auto nowlable = new Engine::Label(user, "pirulen.ttf", 35, halfW, y, 255, 255, 255, 0, 0.5, 0);
         page_label.push_back(nowlable);
         lineNum++;
