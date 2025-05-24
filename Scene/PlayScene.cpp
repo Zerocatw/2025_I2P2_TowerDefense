@@ -11,6 +11,7 @@
 #include "Enemy/Enemy.hpp"
 #include "Enemy/SoldierEnemy.hpp"
 #include "Enemy/TankEnemy.hpp"
+#include "Enemy/PlaneEnemy.hpp"
 #include "Engine/AudioHelper.hpp"
 #include "Engine/GameEngine.hpp"
 #include "Engine/Group.hpp"
@@ -102,6 +103,7 @@ void PlayScene::Update(float deltaTime) {
     for (auto &it : reachEndTimes) {
         if (it <= DangerTime) {
             danger--;
+            UILives->Text = std::string("Life ") + std::to_string(lives); //hackathon 5-2
             if (danger <= 0) {
                 // Death Countdown
                 float pos = DangerTime - it;
@@ -145,7 +147,7 @@ void PlayScene::Update(float deltaTime) {
                 delete UIGroup;
                 delete imgTarget;*/
                 // Win.
-                Engine::GameEngine::GetInstance().ChangeScene("win-scene");
+                Engine::GameEngine::GetInstance().ChangeScene("win");
             }
             continue;
         }
@@ -161,8 +163,9 @@ void PlayScene::Update(float deltaTime) {
                 EnemyGroup->AddNewObject(enemy = new SoldierEnemy(SpawnCoordinate.x, SpawnCoordinate.y));
                 break;
             // TODO HACKATHON-3 (2/3): Add your new enemy here.
-            // case 2:
-            //     ...
+            case 2:
+                EnemyGroup->AddNewObject(enemy = new PlaneEnemy(SpawnCoordinate.x, SpawnCoordinate.y));
+                break;
             case 3:
                 EnemyGroup->AddNewObject(enemy = new TankEnemy(SpawnCoordinate.x, SpawnCoordinate.y));
                 break;
@@ -254,14 +257,39 @@ void PlayScene::OnMouseUp(int button, int mx, int my) {
         }
     }
 }
-void PlayScene::OnKeyDown(int keyCode) {
+void PlayScene::OnKeyDown(int keyCode) { // press key
     IScene::OnKeyDown(keyCode);
     if (keyCode == ALLEGRO_KEY_TAB) {
         DebugMode = !DebugMode;
-    } else {
+    } else { // cheat code  std::list<int> keyStrokes; const std::vector<int> PlayScene::code
         keyStrokes.push_back(keyCode);
-        if (keyStrokes.size() > code.size())
-            keyStrokes.pop_front();
+        std::cout << "now " << keyCode << "\n";
+        if (keyStrokes.size() > code.size()) keyStrokes.pop_front();
+
+        if (keyStrokes.size() == code.size()){
+            int flag = 1;
+            auto temp = keyStrokes.begin();
+            int code_size = code.size();
+            for (int i = 0; i < code_size; i++, temp++) {
+                if(*temp == ALLEGRO_KEY_LSHIFT || *temp == ALLEGRO_KEY_RSHIFT) *temp = ALLEGRO_KEYMOD_SHIFT;
+                if (*temp != code[i]) {
+                    std::cout << "no " << *temp << " " << code[i] << "\n";
+                    flag = 0;
+                    break;
+                }
+                else{
+                    std::cout << "yes "<< *temp << " " << code[i] << "\n";
+                }
+            }
+            if(flag){
+                std::cout << "hello!";
+                EarnMoney(10000);
+                Plane* plane = new Plane();
+                plane->Position = Engine::Point(SpawnGridPoint.x * BlockSize + BlockSize / 2, SpawnGridPoint.y * BlockSize + BlockSize / 2);
+                EffectGroup->AddNewObject(plane);
+            }
+        }
+            
     }
     if (keyCode == ALLEGRO_KEY_Q) {
         // Hotkey for MachineGunTurret.
@@ -327,11 +355,15 @@ void PlayScene::ReadEnemyWave() {
     std::string filename = std::string("Resource/enemy") + std::to_string(MapId) + ".txt";
     // Read enemy file.
     float type, wait, repeat;
+    std::cout << "Reading file: " << filename << "\n";
     enemyWaveData.clear();
     std::ifstream fin(filename);
     while (fin >> type && fin >> wait && fin >> repeat) {
-        for (int i = 0; i < repeat; i++)
+        for (int i = 0; i < repeat; i++){
+            std::cout <<"enemy " << repeat << "\n";
             enemyWaveData.emplace_back(type, wait);
+        }
+            
     }
     fin.close();
 }
@@ -366,10 +398,16 @@ void PlayScene::ConstructUI() {
 }
 
 void PlayScene::UIBtnClicked(int id) {
+    if (preview)
+        UIGroup->RemoveObject(preview->GetObjectIterator());
     Turret *next_preview = nullptr;
     if (id == 0 && money >= MachineGunTurret::Price)
+        preview = new MachineGunTurret(0, 0);
         next_preview = new MachineGunTurret(0, 0);
     else if (id == 1 && money >= LaserTurret::Price)
+        preview = new LaserTurret(0, 0);
+    if (!preview)
+        return;
         next_preview = new LaserTurret(0, 0);
     if (!next_preview)
         return;   // not enough money or invalid turret.
@@ -384,6 +422,7 @@ void PlayScene::UIBtnClicked(int id) {
     UIGroup->AddNewObject(preview);
     OnMouseMove(Engine::GameEngine::GetInstance().GetMousePosition().x, Engine::GameEngine::GetInstance().GetMousePosition().y);
 }
+
 
 bool PlayScene::CheckSpaceValid(int x, int y) {
     if (x < 0 || x >= MapWidth || y < 0 || y >= MapHeight)
