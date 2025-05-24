@@ -398,20 +398,13 @@ void PlayScene::ConstructUI() {
 }
 
 void PlayScene::UIBtnClicked(int id) {
-    if (preview)
-        UIGroup->RemoveObject(preview->GetObjectIterator());
     Turret *next_preview = nullptr;
     if (id == 0 && money >= MachineGunTurret::Price)
-        preview = new MachineGunTurret(0, 0);
         next_preview = new MachineGunTurret(0, 0);
     else if (id == 1 && money >= LaserTurret::Price)
-        preview = new LaserTurret(0, 0);
-    if (!preview)
-        return;
         next_preview = new LaserTurret(0, 0);
     if (!next_preview)
         return;   // not enough money or invalid turret.
-
     if (preview)
         UIGroup->RemoveObject(preview->GetObjectIterator());
     preview = next_preview;
@@ -460,13 +453,24 @@ std::vector<std::vector<int>> PlayScene::CalculateBFSDistance() {
     if (mapState[MapHeight - 1][MapWidth - 1] != TILE_DIRT)
         return map;
     que.push(Engine::Point(MapWidth - 1, MapHeight - 1));
-    map[MapHeight - 1][MapWidth - 1] = 0;
+    map[MapHeight - 1][MapWidth - 1] = 0;// Distance from end point = 0
     while (!que.empty()) {
         Engine::Point p = que.front();
         que.pop();
         // TODO PROJECT-1 (1/1): Implement a BFS starting from the most right-bottom block in the map.
         //               For each step you should assign the corresponding distance to the most right-bottom block.
         //               mapState[y][x] is TILE_DIRT if it is empty.
+        int dx[4] = {0, 0, 1, -1};
+        int dy[4] = {1, -1, 0, 0};
+        for(int i = 0; i < 4; i++){
+            Engine::Point np = Engine::Point(dx[i]+p.x, dy[i]+p.y);
+            if(np.y >=MapHeight || np.x >=MapWidth || np.x < 0 || np.y < 0) continue;
+            if(map[np.y][np.x] != -1) continue;// visited
+            if(mapState[np.y][np.x] == TILE_DIRT){
+                map[np.y][np.x] = map[p.y][p.x]+1; //distence from end point + 1
+                que.push(np);
+            }
+        }
     }
     return map;
 }
