@@ -24,6 +24,7 @@
 #include "UI/Animation/DirtyEffect.hpp"
 #include "UI/Animation/Plane.hpp"
 #include "UI/Component/Label.hpp"
+#include "WinScene.hpp"
 
 // TODO HACKATHON-4 (1/3): Trace how the game handles keyboard input.
 // TODO HACKATHON-4 (2/3): Find the cheat code sequence in this file.
@@ -147,6 +148,14 @@ void PlayScene::Update(float deltaTime) {
                 delete UIGroup;
                 delete imgTarget;*/
                 // Win.
+                // score calculation
+                // change to win scene
+                int now_money = money;
+                int now_kills = kills;
+                int now_lifes = lives;
+                int score = now_kills*10 + now_lifes*100 + now_money;
+                WinScene::finalScore = score;
+                std::cout << "\nMyscore : " << score << "\n";
                 Engine::GameEngine::GetInstance().ChangeScene("win");
             }
             continue;
@@ -308,6 +317,12 @@ void PlayScene::Hit() {
     if (lives <= 0) {
         Engine::GameEngine::GetInstance().ChangeScene("lose");
     }
+}
+int PlayScene::GetKills() const{
+    return kills;
+}
+int PlayScene::GetLife() const {
+    return lives;
 }
 int PlayScene::GetMoney() const {
     return money;

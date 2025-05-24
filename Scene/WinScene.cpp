@@ -9,8 +9,25 @@
 #include "UI/Component/ImageButton.hpp"
 #include "UI/Component/Label.hpp"
 #include "WinScene.hpp"
+#include "PlayScene.hpp"
+#include <iostream>
+#include <vector>
+#include <fstream>
+#include <chrono>
+#include <iomanip>
+#include <sstream>
 
+int WinScene::finalScore = 0;
+std::string GetCurrentDateTime() {
+    auto t = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    std::stringstream ss;
+    ss << std::put_time(std::localtime(&t), "%Y-%m-%d %H:%M:%S");
+    return ss.str();
+}
 void WinScene::Initialize() {
+    nowTime = GetCurrentDateTime();
+    std::cout << "Now time : " << nowTime << "\n";
+    std::cout << "Score : " << finalScore << "\n";
     ticks = 0;
     int w = Engine::GameEngine::GetInstance().GetScreenSize().x;
     int h = Engine::GameEngine::GetInstance().GetScreenSize().y;
@@ -24,6 +41,14 @@ void WinScene::Initialize() {
     AddNewControlObject(btn);
     AddNewObject(new Engine::Label("Back", "pirulen.ttf", 48, halfW, halfH * 7 / 4, 0, 0, 0, 255, 0.5, 0.5));
     bgmId = AudioHelper::PlayAudio("win.wav");
+    // username input
+    Engine::ImageButton *inputbox;
+    inputbox = new Engine::ImageButton("win/InputBox.png", "win/InputBox.png", halfW/2, halfH / 4+23, 800, 70);
+    inputbox->SetOnClickCallback(std::bind(&WinScene::BackOnClick, this,2));
+    AddNewControlObject(inputbox);
+    record_username = "TEST";
+    UserName = new Engine::Label(record_username, "pirulen.ttf", 48, halfW/2+20, halfH / 4+25, 255, 255, 255);
+    AddNewObject(UserName);
 }
 void WinScene::Terminate() {
     IScene::Terminate();
@@ -37,7 +62,40 @@ void WinScene::Update(float deltaTime) {
         bgmId = AudioHelper::PlayBGM("happy.ogg");
     }
 }
+
+void WinScene::OnKeyDown(int keyCode){// username input
+    IScene::OnKeyDown(keyCode);
+    std::cout << "now " << keyCode << "\n";
+    if(keyCode>=ALLEGRO_KEY_A && keyCode<= ALLEGRO_KEY_Z){
+        char input = 'A' + (keyCode-ALLEGRO_KEY_A);
+        record_username+=input;
+        UserName->Text = record_username;
+    }
+    else if(keyCode>=ALLEGRO_KEY_0 && keyCode<= ALLEGRO_KEY_9){
+        char input = '0' + (keyCode-ALLEGRO_KEY_0);
+        record_username+=input;
+        UserName->Text = record_username;
+    }
+    else if(keyCode==ALLEGRO_KEY_BACKSPACE && !record_username.empty()){
+        record_username.pop_back();
+        UserName->Text = record_username;
+    }
+}
+
+/*
+void WinScene::InputUserName(){
+    
+}*/
+
 void WinScene::BackOnClick(int stage) {
+    std::ofstream outputfile("../SaveGame.txt", std::ios::app);
+    if (outputfile.is_open()) {
+        outputfile << UserName->Text << " " << finalScore << " " << nowTime << "\n";
+        outputfile.close();
+    } else {
+        std::cout << "Error\n";
+    }
+
     // Change to select scene.
     Engine::GameEngine::GetInstance().ChangeScene("stage-select");
 }

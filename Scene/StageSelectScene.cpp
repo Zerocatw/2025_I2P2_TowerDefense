@@ -30,10 +30,18 @@ void StageSelectScene::Initialize() {
     btn->SetOnClickCallback(std::bind(&StageSelectScene::PlayOnClick, this, 1));
     AddNewControlObject(btn);
     AddNewObject(new Engine::Label("Stage 1", "pirulen.ttf", 48, halfW, halfH / 2, 0, 0, 0, 255, 0.5, 0.5));
+    
     btn = new Engine::ImageButton("stage-select/dirt.png", "stage-select/floor.png", halfW - 200, halfH / 2 + 100, 400, 100);
     btn->SetOnClickCallback(std::bind(&StageSelectScene::PlayOnClick, this, 2));
     AddNewControlObject(btn);
     AddNewObject(new Engine::Label("Stage 2", "pirulen.ttf", 48, halfW, halfH / 2 + 150, 0, 0, 0, 255, 0.5, 0.5));
+    
+    // ScoreboardScene
+    btn = new Engine::ImageButton("stage-select/dirt.png", "stage-select/floor.png", halfW - 200, halfH * 3 / 2 - 180, 400, 100);
+    btn->SetOnClickCallback(std::bind(&StageSelectScene::ScoreboardOnClick, this));
+    AddNewControlObject(btn);
+    AddNewObject(new Engine::Label("SCOREBOARD", "pirulen.ttf", 40, halfW, halfH * 3 / 2 - 130, 0, 0, 0, 255, 0.5, 0.5));
+
 
     //Slider *sliderBGM, *sliderSFX;
     //sliderBGM = new Slider(40 + halfW - 95, halfH - 50 - 2, 190, 4);

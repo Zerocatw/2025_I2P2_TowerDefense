@@ -31,6 +31,7 @@ protected:
     int lives;
     int money;
     int SpeedMult;
+    int kills;
 
 public:
     static bool DebugMode;
@@ -74,6 +75,8 @@ public:
     void OnKeyDown(int keyCode) override;
     void Hit();
     int GetMoney() const;
+    int GetKills() const; // get kills
+    int GetLife() const; // get life
     void EarnMoney(int money);
     void ReadMap();
     void ReadEnemyWave();

@@ -2,7 +2,7 @@
 #define WINSCENE_HPP
 #include "Engine/IScene.hpp"
 #include <allegro5/allegro_audio.h>
-
+#include <string>
 class WinScene final : public Engine::IScene {
 private:
     float ticks;
@@ -14,6 +14,11 @@ public:
     void Terminate() override;
     void Update(float deltaTime) override;
     void BackOnClick(int stage);
+    Engine::Label *UserName;
+    std::string record_username;
+    std::string nowTime;
+    void OnKeyDown(int keyCode) override;
+    static int finalScore;
 };
 
 #endif   // WINSCENE_HPP
