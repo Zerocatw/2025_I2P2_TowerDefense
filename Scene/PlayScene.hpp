@@ -10,6 +10,7 @@
 #include "Engine/Point.hpp"
 
 class Turret;
+class Shovel;
 namespace Engine {
     class Group;
     class Image;
@@ -22,7 +23,7 @@ private:
     enum TileType {
         TILE_DIRT,
         TILE_FLOOR,
-        TILE_OCCUPIED,
+        TILE_OCCUPIED
     };
     ALLEGRO_SAMPLE_ID bgmId;
     std::shared_ptr<ALLEGRO_SAMPLE_INSTANCE> deathBGMInstance;
@@ -58,6 +59,7 @@ public:
     Engine::Label *UILives;
     Engine::Image *imgTarget;
     Engine::Sprite *dangerIndicator;
+    Shovel* shovelPreview = nullptr;
     Turret *preview;
     std::vector<std::vector<TileType>> mapState;
     std::vector<std::vector<int>> mapDistance;
