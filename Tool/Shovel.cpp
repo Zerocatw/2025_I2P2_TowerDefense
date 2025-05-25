@@ -1,6 +1,5 @@
 #include "Shovel.hpp"
 #include "Scene/PlayScene.hpp"
-#include "Turret/Turret.hpp"
 #include "Engine/GameEngine.hpp"
 
 PlayScene* Shovel::getPlayScene() {

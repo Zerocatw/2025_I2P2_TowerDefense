@@ -23,6 +23,9 @@ void Turret::Update(float deltaTime) {
     PlayScene *scene = getPlayScene();
     imgBase.Position = Position;
     imgBase.Tint = Tint;
+    if(Preview){
+        return;
+    }
     if (!Enabled)
         return;
     if (Target) {

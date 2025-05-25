@@ -27,6 +27,7 @@
 #include "WinScene.hpp"
 #include "Tool/ToolButton.hpp"
 #include "Tool/Shovel.hpp"
+#include "Tool/Landmine.hpp"
 
 // TODO HACKATHON-4 (1/3): Trace how the game handles keyboard input.
 // TODO HACKATHON-4 (2/3): Find the cheat code sequence in this file.
@@ -66,6 +67,7 @@ void PlayScene::Initialize() {
     AddNewObject(EnemyGroup = new Group());
     AddNewObject(BulletGroup = new Group());
     AddNewObject(EffectGroup = new Group());
+    AddNewObject(LandGroup = new Group());
     // Should support buttons.
     AddNewControlObject(UIGroup = new Group());
     ReadMap();
@@ -225,11 +227,15 @@ void PlayScene::OnMouseMove(int mx, int my) {
     IScene::OnMouseMove(mx, my);
     const int x = mx / BlockSize;
     const int y = my / BlockSize;
+    if(landminePreview && landminePreview->Preview){
+        landminePreview->Position.x = mx;
+        landminePreview->Position.y = my;
+    }
     if (shovelPreview && shovelPreview->Preview) {
         shovelPreview->Position.x = mx;
         shovelPreview->Position.y = my;
     }
-    if ((!preview && !shovelPreview) || x < 0 || x >= MapWidth || y < 0 || y >= MapHeight) {
+    if ((!preview && !shovelPreview && !landminePreview) || x < 0 || x >= MapWidth || y < 0 || y >= MapHeight) {
         imgTarget->Visible = false;
         return;
     }
@@ -246,24 +252,43 @@ void PlayScene::OnMouseUp(int button, int mx, int my) {
     if (button & 1) {
         if (shovelPreview && shovelPreview->Preview) {
             std::cout <<"yes\n";
-            Turret* remove = nullptr;
+            Turret* remove_turret = nullptr;
+            Landmine* remove_land = nullptr;
             for(auto it:TowerGroup->GetObjects()){
                 int tx = it->Position.x / BlockSize;
                 int ty = it->Position.y / BlockSize;
                 if (tx == x && ty == y){
-                    remove = dynamic_cast<Turret*>(it); //auto to Turret  
+                    remove_turret = dynamic_cast<Turret*>(it); //auto to Turret  
                     break;
                 }
             }
-            if (remove) {
-                TowerGroup->RemoveObject(remove->GetObjectIterator());
-                mapState[y][x] = TILE_FLOOR; // become floor
-                EarnMoney(remove->GetPrice() / 2);
+            for(auto it:LandGroup->GetObjects()){
+                int tx = it->Position.x / BlockSize;
+                int ty = it->Position.y / BlockSize;
+                if (tx == x && ty == y){
+                    remove_land = dynamic_cast<Landmine*>(it); //auto to Turret  
+                    break;
+                }
+            }
+            if (remove_turret) {
+                TowerGroup->RemoveObject(remove_turret->GetObjectIterator());
+                mapState[y][x] = TILE_FLOOR;// become floor
+                EarnMoney(remove_turret->GetPrice() / 2);
                 if (shovelPreview) { // delete shovel
                     UIGroup->RemoveObject(shovelPreview->GetObjectIterator());
                     shovelPreview = nullptr;
                 }
-            } else {
+            }
+            else if(remove_land){
+                LandGroup->RemoveObject(remove_land->GetObjectIterator());
+                mapState[y][x] = TILE_DIRT;// become floor
+                EarnMoney(remove_land->GetPrice() / 2);
+                if (shovelPreview) { // delete shovel
+                    UIGroup->RemoveObject(shovelPreview->GetObjectIterator());
+                    shovelPreview = nullptr;
+                }
+            }
+            else{
                 // invaild place
                 Engine::Sprite *sprite;
                 GroundEffectGroup->AddNewObject(sprite = new DirtyEffect("play/target-invalid.png", 1, x * BlockSize + BlockSize / 2, y * BlockSize + BlockSize / 2));
@@ -275,7 +300,45 @@ void PlayScene::OnMouseUp(int button, int mx, int my) {
             }
             return;
         }
-        if (mapState[y][x] != TILE_OCCUPIED && preview) {
+        else if(landminePreview && landminePreview->Preview){
+            if (x<0||x>=MapWidth||y<0||y>=MapHeight) {
+                UIGroup->RemoveObject(landminePreview->GetObjectIterator());
+                landminePreview = nullptr;
+                return;
+            }
+            if (mapState[y][x] == TILE_DIRT) {
+                std::cout << "now";
+                // Purchase.
+                EarnMoney(-Landmine::Price);
+                // Remove Preview.
+                landminePreview->GetObjectIterator()->first = false;
+                UIGroup->RemoveObject(landminePreview->GetObjectIterator());
+                // Construct real landmine.
+                landminePreview->Position.x = x * BlockSize + BlockSize/2;
+                landminePreview->Position.y = y * BlockSize + BlockSize/2;
+                landminePreview->Preview = false;
+                landminePreview->Tint = al_map_rgba(255,255,255,255);
+                LandGroup->AddNewObject(landminePreview);
+                // To keep responding when paused.
+                landminePreview->Update(0);
+                // Remove Preview.
+                landminePreview->Enabled = true;
+                landminePreview = nullptr;
+                OnMouseMove(mx, my);
+            }
+            else{
+                Engine::Sprite *sprite;
+                GroundEffectGroup->AddNewObject(sprite = new DirtyEffect("play/target-invalid.png", 1, x * BlockSize + BlockSize / 2, y * BlockSize + BlockSize / 2));
+                sprite->Rotation = 0;
+                landminePreview->Enabled = false;
+                if (landminePreview) { // delete shovel
+                    UIGroup->RemoveObject(landminePreview->GetObjectIterator());
+                    landminePreview = nullptr;
+                }
+            }
+            return;
+        }
+        else if (mapState[y][x] != TILE_OCCUPIED && preview) {
             // Check if valid.
             if (!CheckSpaceValid(x, y)) {
                 Engine::Sprite *sprite;
@@ -298,7 +361,6 @@ void PlayScene::OnMouseUp(int button, int mx, int my) {
             preview->Update(0);
             // Remove Preview.
             preview = nullptr;
-
             mapState[y][x] = TILE_OCCUPIED;
             OnMouseMove(mx, my);
         }
@@ -312,7 +374,6 @@ void PlayScene::OnKeyDown(int keyCode) { // press key
         keyStrokes.push_back(keyCode);
         std::cout << "now " << keyCode << "\n";
         if (keyStrokes.size() > code.size()) keyStrokes.pop_front();
-
         if (keyStrokes.size() == code.size()){
             int flag = 1;
             auto temp = keyStrokes.begin();
@@ -448,6 +509,12 @@ void PlayScene::ConstructUI() {
                            Engine::Sprite("play/shovel.png", 1294, 136+100 - 8, 0, 0, 0, 0), 1294, 136+100, 0);
     toolbtn->SetOnClickCallback(std::bind(&PlayScene::UIBtnClicked, this, 2));
     UIGroup->AddNewControlObject(toolbtn);
+    // Botton 4 Landmine
+    toolbtn = new ToolButton("play/floor.png", "play/dirt.png",
+                           Engine::Sprite("play/landmine.png", 1370, 136+100, 0, 0, 0, 0),
+                           Engine::Sprite("play/landmine.png", 1370, 136+100 - 4, 0, 0, 0, 0), 1370, 136+100, Landmine::Price);
+    toolbtn->SetOnClickCallback(std::bind(&PlayScene::UIBtnClicked, this, 3));
+    UIGroup->AddNewControlObject(toolbtn);
 
     int w = Engine::GameEngine::GetInstance().GetScreenSize().x;
     int h = Engine::GameEngine::GetInstance().GetScreenSize().y;
@@ -458,19 +525,13 @@ void PlayScene::ConstructUI() {
 }
 
 void PlayScene::UIBtnClicked(int id) {
-    if(id == 2){
-        if (preview)
-            UIGroup->RemoveObject(preview->GetObjectIterator());
-        shovelPreview = new Shovel(0, 0);
-        shovelPreview->Position = Engine::GameEngine::GetInstance().GetMousePosition();
-        shovelPreview->Tint = al_map_rgba(255, 255, 255, 200);
-        shovelPreview->Preview = true;
-        UIGroup->AddNewObject(shovelPreview);
-        OnMouseMove(Engine::GameEngine::GetInstance().GetMousePosition().x, Engine::GameEngine::GetInstance().GetMousePosition().y);
-    }
-    else{
+    if(id == 0 || id == 1){ // turret
         if (shovelPreview) {
             UIGroup->RemoveObject(shovelPreview->GetObjectIterator());
+            shovelPreview = nullptr;
+        }
+        if(landminePreview){
+            UIGroup->RemoveObject(landminePreview->GetObjectIterator());
             shovelPreview = nullptr;
         }
         Turret *next_preview = nullptr;
@@ -487,6 +548,35 @@ void PlayScene::UIBtnClicked(int id) {
         preview->Tint = al_map_rgba(255, 255, 255, 200);
         preview->Preview = true;
         UIGroup->AddNewObject(preview);
+        OnMouseMove(Engine::GameEngine::GetInstance().GetMousePosition().x, Engine::GameEngine::GetInstance().GetMousePosition().y);
+    }
+    else if(id == 2){ // shovel
+        if (preview)
+            UIGroup->RemoveObject(preview->GetObjectIterator());
+        if(landminePreview){
+            UIGroup->RemoveObject(landminePreview->GetObjectIterator());
+            shovelPreview = nullptr;
+        }
+        shovelPreview = new Shovel(0, 0);
+        shovelPreview->Position = Engine::GameEngine::GetInstance().GetMousePosition();
+        shovelPreview->Tint = al_map_rgba(255, 255, 255, 200);
+        shovelPreview->Preview = true;
+        UIGroup->AddNewObject(shovelPreview);
+        OnMouseMove(Engine::GameEngine::GetInstance().GetMousePosition().x, Engine::GameEngine::GetInstance().GetMousePosition().y);
+    }
+    else if (id == 3){ // landmine
+        if (preview){
+            UIGroup->RemoveObject(preview->GetObjectIterator());
+        }  
+        if (shovelPreview) {
+            UIGroup->RemoveObject(shovelPreview->GetObjectIterator());
+            shovelPreview = nullptr;
+        }
+        landminePreview = new Landmine(0, 0);
+        landminePreview->Position = Engine::GameEngine::GetInstance().GetMousePosition();
+        landminePreview->Tint = al_map_rgba(255, 255, 255, 200);
+        landminePreview->Preview = true;
+        UIGroup->AddNewObject(landminePreview);
         OnMouseMove(Engine::GameEngine::GetInstance().GetMousePosition().x, Engine::GameEngine::GetInstance().GetMousePosition().y);
     }
    

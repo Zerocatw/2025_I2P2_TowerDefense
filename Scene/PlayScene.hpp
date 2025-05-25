@@ -11,6 +11,7 @@
 
 class Turret;
 class Shovel;
+class Landmine;
 namespace Engine {
     class Group;
     class Image;
@@ -23,7 +24,8 @@ private:
     enum TileType {
         TILE_DIRT,
         TILE_FLOOR,
-        TILE_OCCUPIED
+        TILE_OCCUPIED,
+        TILE_LANDMINE
     };
     ALLEGRO_SAMPLE_ID bgmId;
     std::shared_ptr<ALLEGRO_SAMPLE_INSTANCE> deathBGMInstance;
@@ -55,11 +57,13 @@ public:
     Group *EnemyGroup;
     Group *EffectGroup;
     Group *UIGroup;
+    Group *LandGroup;
     Engine::Label *UIMoney;
     Engine::Label *UILives;
     Engine::Image *imgTarget;
     Engine::Sprite *dangerIndicator;
     Shovel* shovelPreview = nullptr;
+    Landmine* landminePreview = nullptr;
     Turret *preview;
     std::vector<std::vector<TileType>> mapState;
     std::vector<std::vector<int>> mapDistance;

@@ -84,6 +84,8 @@ add_executable(2025_I2P2_TowerDefense
     Tool/ToolButton.cpp
     Tool/Shovel.hpp
     Tool/Shovel.cpp
+    Tool/Landmine.cpp
+    Tool/Landmine.hpp
 
     UI/Animation/DirtyEffect.cpp
     UI/Animation/DirtyEffect.hpp
