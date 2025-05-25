@@ -28,6 +28,7 @@
 #include "Tool/ToolButton.hpp"
 #include "Tool/Shovel.hpp"
 #include "Tool/Landmine.hpp"
+#include "Enemy/SplitEnemy.hpp"
 
 // TODO HACKATHON-4 (1/3): Trace how the game handles keyboard input.
 // TODO HACKATHON-4 (2/3): Find the cheat code sequence in this file.
@@ -183,6 +184,9 @@ void PlayScene::Update(float deltaTime) {
                 break;
             case 3:
                 EnemyGroup->AddNewObject(enemy = new TankEnemy(SpawnCoordinate.x, SpawnCoordinate.y));
+                break;
+            case 4:
+                EnemyGroup->AddNewObject(enemy = new SplitEnemy(SpawnCoordinate.x, SpawnCoordinate.y));
                 break;
             default:
                 continue;

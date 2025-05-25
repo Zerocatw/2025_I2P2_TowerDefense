@@ -21,12 +21,7 @@ namespace Engine {
 
 class PlayScene final : public Engine::IScene {
 private:
-    enum TileType {
-        TILE_DIRT,
-        TILE_FLOOR,
-        TILE_OCCUPIED,
-        TILE_LANDMINE
-    };
+    
     ALLEGRO_SAMPLE_ID bgmId;
     std::shared_ptr<ALLEGRO_SAMPLE_INSTANCE> deathBGMInstance;
 
@@ -37,6 +32,12 @@ protected:
     int kills;
 
 public:
+    enum TileType {
+        TILE_DIRT,
+        TILE_FLOOR,
+        TILE_OCCUPIED,
+        TILE_LANDMINE
+    };
     static bool DebugMode;
     static const std::vector<Engine::Point> directions;
     static const int MapWidth, MapHeight;
