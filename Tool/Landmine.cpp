@@ -19,7 +19,7 @@ PlayScene* Landmine::getPlayScene() {
 
 Landmine::Landmine(float x, float y)
     : Engine::Sprite("play/landmine.png", x, y){
-    Anchor.y += 8.0f / GetBitmapHeight();
+    Anchor.y += 2.0f / GetBitmapHeight();
 }
 
 void Landmine::Update(float deltaTime){
