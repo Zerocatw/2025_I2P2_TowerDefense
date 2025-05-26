@@ -70,7 +70,7 @@ void ScoreBoardScene::Initialize() {
             lineNum = 0;
         }
     }
-    for (int i = 0; i < page_label.size(); ++i) {
+    for (int i = 0; i < page_label.size(); ++i) {// create user object
         AddNewObject(page_label[i]);
     }
     Engine::ImageButton *btn;
@@ -103,28 +103,17 @@ void ScoreBoardScene::ReloadPage() {
     int end   = std::min((int)page_label.size(), start + limit_page_num);
     for (int i = 0; i < page_label.size(); i++) {
         if (i >= start && i < end) {
-            // 顯示這一頁的 Label
-            page_label[i]->Color = al_map_rgba(255, 255, 255, 255);
+            page_label[i]->Color = al_map_rgba(255, 255, 255, 255); // white
             std::cout << "suss\n";
         } else {
-            // 隱藏其他 Label
-            page_label[i]->Color = al_map_rgba(255, 255, 255, 0);
+            page_label[i]->Color = al_map_rgba(255, 255, 255, 0); // alpha = 0 = invis
         }
     }
 }
 
 void ScoreBoardScene::BackOnClick(int stage) {
     crtpage = 0;
-    ReloadPage();
-    std::cout <<"set invis!\n";
-    for(auto it:page_label){
-        it->Color = al_map_rgba(255, 255, 255, 0);
-    }
-    int range = std::min(std::max(5, (int)page_label.size()), (int)page_label.size());
-    std::cout <<"set vail!\n";
-    for(int i = 0; i < range; i++){
-        page_label[i]->Color = al_map_rgba(255, 255, 255, 255);
-    }
+    ReloadPage(); // reset
     Engine::GameEngine::GetInstance().ChangeScene("stage-select");
 }
 void ScoreBoardScene::PlayOnClick(int stage) {

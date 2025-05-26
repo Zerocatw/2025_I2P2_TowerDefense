@@ -68,9 +68,9 @@ void PlayScene::Initialize() {
     AddNewObject(EnemyGroup = new Group());
     AddNewObject(BulletGroup = new Group());
     AddNewObject(EffectGroup = new Group());
-    AddNewObject(LandGroup = new Group());
+    AddNewObject(LandGroup = new Group()); // landmine
     // Should support buttons.
-    AddNewControlObject(UIGroup = new Group());
+    AddNewControlObject(UIGroup = new Group()); // include shovel
     ReadMap();
     ReadEnemyWave();
     mapDistance = CalculateBFSDistance();
@@ -156,13 +156,14 @@ void PlayScene::Update(float deltaTime) {
                 delete imgTarget;*/
                 // Win.
                 // score calculation
-                // change to win scene
                 int now_money = money;
                 int now_kills = kills;
                 int now_lifes = lives;
+                // kills*10 + lifes*100 + left_money
                 int score = now_kills*10 + now_lifes*100 + now_money;
                 WinScene::finalScore = score;
                 std::cout << "\nMyscore : " << score << "\n";
+                // change to win scene
                 Engine::GameEngine::GetInstance().ChangeScene("win");
             }
             continue;
@@ -185,21 +186,31 @@ void PlayScene::Update(float deltaTime) {
             case 3:
                 EnemyGroup->AddNewObject(enemy = new TankEnemy(SpawnCoordinate.x, SpawnCoordinate.y));
                 break;
-            case 4:
+            case 4: // my new add!
                 EnemyGroup->AddNewObject(enemy = new SplitEnemy(SpawnCoordinate.x, SpawnCoordinate.y));
                 break;
             default:
                 continue;
         }
-        enemy->UpdatePath(mapDistance);
+        enemy->UpdatePath(mapDistance);// update path with bfs
         // Compensate the time lost.
         enemy->Update(ticks);
     }
+    // preview picture follow mouse
     if (preview) {
         preview->Position = Engine::GameEngine::GetInstance().GetMousePosition();
         // To keep responding when paused.
         preview->Update(deltaTime);
     }
+    if(shovelPreview){
+        shovelPreview->Position = Engine::GameEngine::GetInstance().GetMousePosition();
+        shovelPreview->Update(deltaTime);
+    }
+    if(landminePreview){
+        landminePreview->Position = Engine::GameEngine::GetInstance().GetMousePosition();
+        landminePreview->Update(deltaTime);
+    }
+
 }
 void PlayScene::Draw() const {
     IScene::Draw();
@@ -231,14 +242,6 @@ void PlayScene::OnMouseMove(int mx, int my) {
     IScene::OnMouseMove(mx, my);
     const int x = mx / BlockSize;
     const int y = my / BlockSize;
-    if(landminePreview && landminePreview->Preview){
-        landminePreview->Position.x = mx;
-        landminePreview->Position.y = my;
-    }
-    if (shovelPreview && shovelPreview->Preview) {
-        shovelPreview->Position.x = mx;
-        shovelPreview->Position.y = my;
-    }
     if ((!preview && !shovelPreview && !landminePreview) || x < 0 || x >= MapWidth || y < 0 || y >= MapHeight) {
         imgTarget->Visible = false;
         return;
@@ -410,6 +413,14 @@ void PlayScene::OnKeyDown(int keyCode) { // press key
         // Hotkey for LaserTurret.
         UIBtnClicked(1);
     }
+    else if (keyCode == ALLEGRO_KEY_E) {
+        // Hotkey for Shovel.
+        UIBtnClicked(2);
+    }
+    else if (keyCode == ALLEGRO_KEY_R) {
+        // Hotkey for Landmine.
+        UIBtnClicked(3);
+    }
     else if (keyCode >= ALLEGRO_KEY_0 && keyCode <= ALLEGRO_KEY_9) {
         // Hotkey for Speed up.
         SpeedMult = keyCode - ALLEGRO_KEY_0;
@@ -420,12 +431,6 @@ void PlayScene::Hit() {
     if (lives <= 0) {
         Engine::GameEngine::GetInstance().ChangeScene("lose");
     }
-}
-int PlayScene::GetKills() const{
-    return kills;
-}
-int PlayScene::GetLife() const {
-    return lives;
 }
 int PlayScene::GetMoney() const {
     return money;
@@ -528,16 +533,24 @@ void PlayScene::ConstructUI() {
     UIGroup->AddNewObject(dangerIndicator);
 }
 
+void PlayScene::ClearPreview(){
+    if (shovelPreview) {
+        UIGroup->RemoveObject(shovelPreview->GetObjectIterator());
+        shovelPreview = nullptr;
+    }
+    if(landminePreview){
+        UIGroup->RemoveObject(landminePreview->GetObjectIterator());
+        landminePreview = nullptr;
+    }
+    if (preview){
+        UIGroup->RemoveObject(preview->GetObjectIterator());
+        preview = nullptr;
+    } 
+}
+
 void PlayScene::UIBtnClicked(int id) {
+    ClearPreview();
     if(id == 0 || id == 1){ // turret
-        if (shovelPreview) {
-            UIGroup->RemoveObject(shovelPreview->GetObjectIterator());
-            shovelPreview = nullptr;
-        }
-        if(landminePreview){
-            UIGroup->RemoveObject(landminePreview->GetObjectIterator());
-            shovelPreview = nullptr;
-        }
         Turret *next_preview = nullptr;
         if (id == 0 && money >= MachineGunTurret::Price)
             next_preview = new MachineGunTurret(0, 0);
@@ -545,8 +558,6 @@ void PlayScene::UIBtnClicked(int id) {
             next_preview = new LaserTurret(0, 0);
         if (!next_preview)
             return;   // not enough money or invalid turret.
-        if (preview)
-            UIGroup->RemoveObject(preview->GetObjectIterator());
         preview = next_preview;
         preview->Position = Engine::GameEngine::GetInstance().GetMousePosition();
         preview->Tint = al_map_rgba(255, 255, 255, 200);
@@ -555,12 +566,6 @@ void PlayScene::UIBtnClicked(int id) {
         OnMouseMove(Engine::GameEngine::GetInstance().GetMousePosition().x, Engine::GameEngine::GetInstance().GetMousePosition().y);
     }
     else if(id == 2){ // shovel
-        if (preview)
-            UIGroup->RemoveObject(preview->GetObjectIterator());
-        if(landminePreview){
-            UIGroup->RemoveObject(landminePreview->GetObjectIterator());
-            shovelPreview = nullptr;
-        }
         shovelPreview = new Shovel(0, 0);
         shovelPreview->Position = Engine::GameEngine::GetInstance().GetMousePosition();
         shovelPreview->Tint = al_map_rgba(255, 255, 255, 200);
@@ -569,13 +574,6 @@ void PlayScene::UIBtnClicked(int id) {
         OnMouseMove(Engine::GameEngine::GetInstance().GetMousePosition().x, Engine::GameEngine::GetInstance().GetMousePosition().y);
     }
     else if (id == 3){ // landmine
-        if (preview){
-            UIGroup->RemoveObject(preview->GetObjectIterator());
-        }  
-        if (shovelPreview) {
-            UIGroup->RemoveObject(shovelPreview->GetObjectIterator());
-            shovelPreview = nullptr;
-        }
         landminePreview = new Landmine(0, 0);
         landminePreview->Position = Engine::GameEngine::GetInstance().GetMousePosition();
         landminePreview->Tint = al_map_rgba(255, 255, 255, 200);
@@ -583,7 +581,6 @@ void PlayScene::UIBtnClicked(int id) {
         UIGroup->AddNewObject(landminePreview);
         OnMouseMove(Engine::GameEngine::GetInstance().GetMousePosition().x, Engine::GameEngine::GetInstance().GetMousePosition().y);
     }
-   
 }
 
 

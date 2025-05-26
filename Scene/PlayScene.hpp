@@ -82,14 +82,13 @@ public:
     void OnKeyDown(int keyCode) override;
     void Hit();
     int GetMoney() const;
-    int GetKills() const; // get kills
-    int GetLife() const; // get life
     void EarnMoney(int money);
     void ReadMap();
     void ReadEnemyWave();
     void ConstructUI();
     void UIBtnClicked(int id);
     bool CheckSpaceValid(int x, int y);
+    void ClearPreview();
     std::vector<std::vector<int>> CalculateBFSDistance();
     // void ModifyReadMapTiles();
 };

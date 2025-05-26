@@ -18,7 +18,7 @@
 #include <sstream>
 
 int WinScene::finalScore = 0;
-std::string GetCurrentDateTime() {
+std::string GetCurrentDateTime() { // GET LOCAL TIME
     auto t = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     std::stringstream ss;
     ss << std::put_time(std::localtime(&t), "%Y-%m-%d %H:%M:%S");
@@ -46,7 +46,7 @@ void WinScene::Initialize() {
     inputbox = new Engine::ImageButton("win/InputBox.png", "win/InputBox.png", halfW/2, halfH / 4+23, 800, 70);
     inputbox->SetOnClickCallback(std::bind(&WinScene::BackOnClick, this,2));
     AddNewControlObject(inputbox);
-    record_username = "TEST";
+    record_username = "TEST"; // default
     UserName = new Engine::Label(record_username, "pirulen.ttf", 48, halfW/2+20, halfH / 4+25, 255, 255, 255);
     AddNewObject(UserName);
 }
@@ -76,20 +76,16 @@ void WinScene::OnKeyDown(int keyCode){// username input
         record_username+=input;
         UserName->Text = record_username;
     }
-    else if(keyCode==ALLEGRO_KEY_BACKSPACE && !record_username.empty()){
+    else if(keyCode==ALLEGRO_KEY_BACKSPACE && !record_username.empty()){ // DELETE
         record_username.pop_back();
         UserName->Text = record_username;
     }
 }
 
-/*
-void WinScene::InputUserName(){
-    
-}*/
 
 void WinScene::BackOnClick(int stage) {
     std::ofstream outputfile("../SaveGame.txt", std::ios::app);
-    if (outputfile.is_open()) {
+    if (outputfile.is_open()) {// record formate : username score date
         outputfile << UserName->Text << " " << finalScore << " " << nowTime << "\n";
         outputfile.close();
     } else {
