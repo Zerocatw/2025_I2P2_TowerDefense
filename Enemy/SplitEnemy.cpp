@@ -23,58 +23,33 @@ void SplitEnemy::Hit(float damage){
 void SplitEnemy::Split() {
     PlayScene* scene = getPlayScene();
 
-    // be sure path
-    if (path.size() <= 1) {
-        std::cout << "[SplitEnemy] Path too short, cannot split\n";
-        return;
+    for(auto it:path){
+        std::cout << it.x << " " << it.y << "\n";
     }
 
-    // cur, next
-    Engine::Point gridCurr = path[0];
-    Engine::Point gridNext = path[1];
-    Engine::Point forwardVec = (gridNext - gridCurr).Normalize();
-
-    // offset
-    float offset = PlayScene::BlockSize * 0.25f;
-
-    // next, prev
-    Engine::Point frontPos = Position + forwardVec * offset;
-    Engine::Point backPos  = Position - forwardVec * offset;
-    std::array<Engine::Point, 2> candidates = { frontPos, backPos };
-
-    for (auto& pos : candidates) {
-        // space index
-        int gx = static_cast<int>(std::floor(pos.x / PlayScene::BlockSize));
-        int gy = static_cast<int>(std::floor(pos.y / PlayScene::BlockSize));
-
-        // check
-        if (gx < 0 || gx >= PlayScene::MapWidth ||
-            gy < 0 || gy >= PlayScene::MapHeight) {
-            std::cout << "[SplitEnemy] Candidate (" << pos.x << "," << pos.y 
-                      << ") grid (" << gx << "," << gy << ") out of bounds, skip\n";
-            continue;
-        }
-
-        if (scene->mapState[gy][gx] != PlayScene::TILE_DIRT) {
-            std::cout << "[SplitEnemy] Candidate grid (" << gx << "," << gy 
-                      << ") not TILE_DIRT, skip\n";
-            continue;
-        }
-
-        float centerX = gx * PlayScene::BlockSize + PlayScene::BlockSize * 0.5f;
-        float centerY = gy * PlayScene::BlockSize + PlayScene::BlockSize * 0.5f;
-
-        // born
+    if (path.size() >= 2) {
+        Engine::Point Spawn_next = path.back();
+        Engine::Point Spawn_next_next = path[(int)path.size()-2];
+        // first born!
+        int gx = Spawn_next.x;
+        int gy = Spawn_next.y;
+        float centerX = gx * PlayScene::BlockSize + PlayScene::BlockSize/2;
+        float centerY = gy * PlayScene::BlockSize + PlayScene::BlockSize/2;
         auto soldier = new SoldierEnemy(centerX, centerY);
         soldier->UpdatePath(scene->mapDistance);
         scene->EnemyGroup->AddNewObject(soldier);
-
-        std::cout << "[SplitEnemy] Spawned SoldierEnemy at grid (" 
-                  << gx << ", " << gy << ") -> pixel (" 
-                  << centerX << ", " << centerY << ")\n";
+        std::cout << "First born : " << gx << " " << gy; 
+        // second born!
+        gx = Spawn_next_next.x;
+        gy = Spawn_next_next.y;
+        centerX = gx * PlayScene::BlockSize + PlayScene::BlockSize/2;
+        centerY = gy * PlayScene::BlockSize + PlayScene::BlockSize/2;
+        soldier = new SoldierEnemy(centerX, centerY);
+        soldier->UpdatePath(scene->mapDistance);
+        scene->EnemyGroup->AddNewObject(soldier);
+        std::cout << "Second born : " << gx << " " << gy; 
     }
-
-    std::cout << "[SplitEnemy] Split complete\n";
+    std::cout << "born all done!\n";
 }
 
 
